@@ -1,3 +1,3 @@
-const { scrapeUserEvents } = require('./parser')
+const processUser = require('./parser')
 
-scrapeUserEvents(146388)
+processUser(146388)
