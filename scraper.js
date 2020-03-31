@@ -31,6 +31,21 @@ const processUser = async (userId) => {
   return user
 }
 
+const userExists = async (userId) => {
+  const url = `https://www.parkrun.org.uk/results/athleteresultshistory/?athleteNumber=${userId}`
+
+  const res = await fetch(url, {
+    headers: {'User-Agent': 'Mozilla/5.0 (Android 4.4; Mobile; rv:41.0) Gecko/41.0 Firefox/41.0'}
+  })
+  const html = await res.text()
+  const $ = cheerio.load(html)
+
+  const heading = $('#content h2').text().trim()
+  console.log(heading !== '( parkruns)')
+
+  return heading !== '( parkruns)'
+}
+
 /**
  * Scrapes the events (park run tracks) the user has attended
  */
@@ -148,4 +163,7 @@ const scrapeEventResults = async (eventUrl) => {
   return event
 }
 
-module.exports = processUser
+module.exports = {
+  processUser,
+  userExists
+}
