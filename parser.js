@@ -14,18 +14,21 @@ cheerio = cheerioAdv.wrap(cheerio)
 // 
 
 /**
- * Scrapes the parkrun.org.uk website for the given users data
+ * Scrapes the parkrun.org.uk website for the given user's data
  * @param {String} userId the user ID to be scraped
  */
 const processUser = async (userId) => {
   const eventURLs = await scrapeUserEvents(userId)
-  console.log(eventURLs)
 
-  eventURLs.forEach(async (url) => {
-    const events = await scrapeEventResults(url)
-    console.log(events)
-    console.log('----------------------------------------------------')
-  });
+  const user = {
+    id: userId,
+    eventCount: eventURLs.length,
+    events: await Promise.all(eventURLs.map(async (url) => {
+      return await scrapeEventResults(url)
+    }))
+  }
+
+  return user
 }
 
 /**
@@ -34,7 +37,9 @@ const processUser = async (userId) => {
 const scrapeUserEvents = async (userId) => {
   const url = `https://www.parkrun.org.uk/results/athleteresultshistory/?athleteNumber=${userId}`
 
-  const res = await fetch(url)
+  const res = await fetch(url, {
+    headers: {'User-Agent': 'Mozilla/5.0 (Android 4.4; Mobile; rv:41.0) Gecko/41.0 Firefox/41.0'}
+  })
   const html = await res.text()
   const $ = cheerio.load(html)
 
@@ -55,18 +60,41 @@ const scrapeUserEvents = async (userId) => {
  * @returns an Array of objects containing event data
  */
 const scrapeEventResults = async (eventUrl) => {
-  const eventName = eventUrl.split('/')[3]
 
-  const res = await fetch(eventUrl)
+  // Force the code to wait for the random number of seconds
+
+  const wait = ms => {
+    const date = new Date()
+    do {
+      date2 = new Date()
+    }
+    while (date2 - date < ms)
+  }
+
+  const getRandomNumber = (min, max) => {
+    return Math.floor(Math.random() * (max - min) + min)
+  }
+
+  wait(getRandomNumber(5000, 15000))
+
+  // Back to the normal flow of the function
+
+  const res = await fetch(eventUrl, {
+    headers: {'User-Agent': 'Mozilla/5.0 (Android 4.4; Mobile; rv:41.0) Gecko/41.0 Firefox/41.0'}
+  })
   const html = await res.text()
   const $ = cheerio.load(html)
 
-  const events = []
+  const event = {
+    name: eventUrl.split('/')[3],
+    url: eventUrl,
+    runs: []
+  }
+
   $('table:eq(2) tbody tr').each((i, row) => {
-    const eventData = {
-      event: eventName,
+    const run = {
       date: null,
-      runNumber: null,
+      number: null,
       position: null,
       time: null,
       ageGrade: null,
@@ -78,30 +106,46 @@ const scrapeEventResults = async (eventUrl) => {
 
       switch (j) {
         case 0:
-          eventData.date = tdValue
+          const d = tdValue.split('/')
+          run.date = new Date(`${d[2]}-${d[1]}-${d[0]}T00:00:00`)
           break
+
         case 1:
-          eventData.runNumber = tdValue
+          run.number = +tdValue
           break
+
         case 2:
-          eventData.position = tdValue
+          run.position = +tdValue
           break
+
         case 3:
-          eventData.time = tdValue
+          const timeParts = tdValue.split(':').map(num => parseInt(num))
+
+          let hours = 0
+          let mins, secs
+          if (timeParts.length === 2) {
+            [mins, secs] = timeParts
+          } else {
+            [hours, mins, secs] = timeParts
+          }
+
+          run.time = hours * 3600 + mins * 60 + secs
           break
+
         case 4:
-          eventData.ageGrade = tdValue
+          run.ageGrade = tdValue
           break
+
         case 5:
-          eventData.pb = tdValue
+          run.pb = Boolean(tdValue)
           break
       }
     })
 
-    events.push(eventData)
+    event.runs.push(run)
   })
 
-  return events
+  return event
 }
 
 module.exports = processUser
