@@ -2,6 +2,8 @@ let cheerio = require('cheerio');
 const cheerioAdv = require('cheerio-advanced-selectors')
 const fetch = require('node-fetch');
 
+const { scrapeFetch, wait } = require('./scrapeAssistant')
+
 cheerio = cheerioAdv.wrap(cheerio)
 
 // 
@@ -22,6 +24,7 @@ const processUser = async (userId) => {
 
   const user = {
     id: userId,
+    name: null,
     eventCount: eventURLs.length,
     events: await Promise.all(eventURLs.map(async (url) => {
       return await scrapeEventResults(url)
@@ -31,19 +34,25 @@ const processUser = async (userId) => {
   return user
 }
 
+/**
+ * Determines if a user with the given userId exists
+ * @param {Number} userId the user number to be checked
+ * @returns {Boolean} true if the user exists, false otherwise
+ */
 const userExists = async (userId) => {
   const url = `https://www.parkrun.org.uk/results/athleteresultshistory/?athleteNumber=${userId}`
-
-  const res = await fetch(url, {
-    headers: {'User-Agent': 'Mozilla/5.0 (Android 4.4; Mobile; rv:41.0) Gecko/41.0 Firefox/41.0'}
-  })
-  const html = await res.text()
-  const $ = cheerio.load(html)
+  const $ = await scrapeFetch(url)
 
   const heading = $('#content h2').text().trim()
-  console.log(heading !== '( parkruns)')
-
   return heading !== '( parkruns)'
+}
+
+const scrapeUserName = async (userId) => {
+  const url = `https://www.parkrun.org.uk/results/athleteresultshistory/?athleteNumber=${userId}`
+  const $ = await scrapeFetch(url)
+
+  const name = $('#content h2').text()
+  return name.trim().split(' (')[0]
 }
 
 /**
@@ -51,12 +60,7 @@ const userExists = async (userId) => {
  */
 const scrapeUserEvents = async (userId) => {
   const url = `https://www.parkrun.org.uk/results/athleteresultshistory/?athleteNumber=${userId}`
-
-  const res = await fetch(url, {
-    headers: {'User-Agent': 'Mozilla/5.0 (Android 4.4; Mobile; rv:41.0) Gecko/41.0 Firefox/41.0'}
-  })
-  const html = await res.text()
-  const $ = cheerio.load(html)
+  const $ = await scrapeFetch(url)
 
   const eventLinks = []
   $('tbody tr td:nth-child(6)').find('a').each((i, elem) => {
@@ -78,27 +82,11 @@ const scrapeEventResults = async (eventUrl) => {
 
   // Force the code to wait for the random number of seconds
 
-  const wait = ms => {
-    const date = new Date()
-    do {
-      date2 = new Date()
-    }
-    while (date2 - date < ms)
-  }
-
-  const getRandomNumber = (min, max) => {
-    return Math.floor(Math.random() * (max - min) + min)
-  }
-
-  wait(getRandomNumber(5000, 15000))
+  wait(5000, 15000)
 
   // Back to the normal flow of the function
 
-  const res = await fetch(eventUrl, {
-    headers: {'User-Agent': 'Mozilla/5.0 (Android 4.4; Mobile; rv:41.0) Gecko/41.0 Firefox/41.0'}
-  })
-  const html = await res.text()
-  const $ = cheerio.load(html)
+  const $ = await scrapeFetch(eventUrl)
 
   const event = {
     name: eventUrl.split('/')[3],
@@ -165,5 +153,6 @@ const scrapeEventResults = async (eventUrl) => {
 
 module.exports = {
   processUser,
+  scrapeUserName,
   userExists
 }
