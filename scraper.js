@@ -82,7 +82,7 @@ const scrapeEventResults = async (eventUrl) => {
 
   // Force the code to wait for the random number of seconds
 
-  wait(5000, 15000)
+  wait(5000, 7000)
 
   // Back to the normal flow of the function
 
