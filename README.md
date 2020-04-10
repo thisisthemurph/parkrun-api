@@ -8,7 +8,7 @@ I wanted to play with the Parkrun website's data set, but they didn't have an av
 
 ### Request
 
-`GET http://mmurphy.co.uk/jokes/api`
+`GET http://mmurphy.co.uk/parkrun/api`
 
     curl -i -H 'Accept: application/json' http://mmurphy.co.uk/parkrun/api/123456 --get
 
