@@ -20,5 +20,5 @@ app.get('/parkrun/api/:userId', async (req, res) => {
   }
 })
 
-const port = 5000
+const port = 8181
 app.listen(port, () => console.log(`Listening on port ${port}`))
