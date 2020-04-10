@@ -25,6 +25,11 @@ const getRandomNumber = (min, max) => {
   return Math.floor(Math.random() * (max - min) + min)
 }
 
+/**
+ * Forces the script to wait a ransom numner of milleseconds between minMs and maxMs
+ * @param {number} minMs minimum time in milliseconds
+ * @param {number} maxMs maximum time in milliseconds
+ */
 const wait = (minMs, maxMs) => {
   const ms = getRandomNumber(minMs, maxMs)
   const date = new Date()
