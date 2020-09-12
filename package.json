@@ -12,6 +12,6 @@
     "cheerio": "^1.0.0-rc.3",
     "cheerio-advanced-selectors": "^2.0.1",
     "express": "^4.17.1",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.1"
   }
 }
